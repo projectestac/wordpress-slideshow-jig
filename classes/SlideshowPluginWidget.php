@@ -18,6 +18,22 @@ class SlideshowPluginWidget extends WP_Widget
 	function SlideshowPluginWidget()
 	{
 		// Settings
+		// XTEC ************ MODIFICAT - Translation hardcoded because gettext doesn't works here
+		// 2014.10.10 @jmeler
+		$options = array(
+			'classname'   => 'SlideshowWidget',
+			'description' => 'Mostra un carrusel a la zona de ginys triada'
+		);
+
+		// Create the widget.
+		$this->WP_Widget(
+			'slideshowWidget',
+			'Carrusel',
+			$options
+		);
+
+		//************ ORIGINAL
+		/*
 		$options = array(
 			'classname'   => 'SlideshowWidget',
 			'description' => __('Enables you to show your slideshows in the widget area of your website.', 'slideshow-jquery-image-gallery')
@@ -29,6 +45,8 @@ class SlideshowPluginWidget extends WP_Widget
 			__('Slideshow Widget', 'slideshow-jquery-image-gallery'),
 			$options
 		);
+		*/
+		//************ FI
 	}
 
 	/**
