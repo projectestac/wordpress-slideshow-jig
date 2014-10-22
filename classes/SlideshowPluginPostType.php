@@ -224,6 +224,14 @@ class SlideshowPluginPostType
 		$data->slides = SlideshowPluginSlideshowSettingsHandler::getSlides($post->ID);
 
 		SlideshowPluginMain::outputView(__CLASS__ . DIRECTORY_SEPARATOR . 'slides.php', $data);
+
+		// XTEC ************ AFEGIT - get slides from picasa
+		// 2014.10.22 @jmeler
+		echo '<hr><p>
+		Picasa àlbum <a target="_blank" href="https://sites.google.com/a/xtec.cat/ajudaxtecblocs/insercio-de-continguts/carrusel-d-imatges">RSS</a>:
+		<input type="text" name="picasa_album" value='.get_post_meta( $post->ID, "picasa_album", true ).'><br>
+		</p>';
+		//************ FI
 	}
 
 	/**
