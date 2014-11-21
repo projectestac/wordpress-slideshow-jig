@@ -280,29 +280,33 @@ class SlideshowPluginSlideshowSettingsHandler
 			// Get cached settings
 			$slides = self::$slides[$slideshowId];
 		}
-                
+
                 // XTEC ************ AFEGIT - get slides from picasa
-                // 2014.10.22 @jmeler
-                
+                // 2014.10.22 @jmeler && @frncesc
+
                 $picasa_album_rss=get_post_meta($slideshowId,"picasa_album",true);
-                
-		if ($picasa_album_rss){
+                if ($picasa_album_rss){
+                    $picasa_album_rss = str_replace("alt=rss","",$picasa_album_rss);
                     $picasa_album = fetch_feed($picasa_album_rss);
+
                     if ( !is_wp_error( $picasa_album ) ) {
                         $picasa_items = $picasa_album->get_items();
+                        $picasa_items = array_reverse($picasa_items);
+
                         foreach($picasa_items as $picasa_item){
                             $enclosure=$picasa_item->get_enclosure();
                             $info=$enclosure->get_description();
                             $url_img=$enclosure->get_link();
-                            $slides[]=array("title"=>$info,"url"=>$url_img,"type"=>"image");
+                            $url_target=$url_img;
+                            $slides[]=array("title"=>$info,"url"=>$url_img,"urlTarget"=>$url_target,"type"=>"image");
                         }
                     }
                     else{
-                        echo "<p>No es pot obtenir l'àlbum de picasa. <a target='_blank' href='http://agora.xtec.cat/nodes/carrusel/#picasa_rss'>Ajuda</a>.</p>";
-                    }    
+                        echo "<p>No es pot obtenir l'àlbum de picasa. <a target='_blank' href='https://sites.google.com/a/xtec.cat/ajudaxtecblocs/insercio-de-continguts/carrusel-d-imatges'>Ajuda</a>.</p>";
+                    }
                 }
                 //************ FI
-		
+
                 // Sort slides by order ID
 		if (is_array($slides))
 		{
@@ -372,13 +376,13 @@ class SlideshowPluginSlideshowSettingsHandler
 			$oldStyleSettings,
 			$newPostStyleSettings
 		);
-                
-                // XTEC ************ AFEGIT - save rss picasa album 
+
+                // XTEC ************ AFEGIT - save rss picasa album
                 // 2014.10.22 @jmeler
                 $picasa_album=isset($_POST["picasa_album"])?$_POST["picasa_album"]:'';
                 update_post_meta($postId, "picasa_album", $picasa_album);
                 //************ FI
-                
+
 		// Save settings
 		update_post_meta($postId, self::$settingsKey, $newSettings);
 		update_post_meta($postId, self::$styleSettingsKey, $newStyleSettings);
@@ -433,7 +437,42 @@ class SlideshowPluginSlideshowSettingsHandler
 		$yes = __('Yes', 'slideshow-jquery-image-gallery');
 		$no  = __('No', 'slideshow-jquery-image-gallery');
 
+                // XTEC ************ MODIFICAT - Change default settings
+                // 2014.11.20 @jmeler
+
 		// Default values
+		$data = array(
+			'animation' => 'slide',
+			'slideSpeed' => '1',
+			'descriptionSpeed' => '0.4',
+			'intervalSpeed' => '8',
+			'slidesPerView' => '1',
+			'maxWidth' => '0',
+			'aspectRatio' => '3:1',
+			'height' => '300',
+			'imageBehaviour' => 'crop',
+			'showDescription' => 'true',
+			'hideDescription' => 'true',
+			'preserveSlideshowDimensions' => 'false',
+			'enableResponsiveness' => 'true',
+			'play' => 'false',
+			'loop' => 'true',
+			'pauseOnHover' => 'true',
+			'controllable' => 'true',
+			'hideNavigationButtons' => 'false',
+			'showPagination' => 'true',
+			'hidePagination' => 'true',
+			'controlPanel' => 'true',
+			'hideControlPanel' => 'true',
+			'waitUntilLoaded' => 'true',
+			'showLoadingIcon' => 'true',
+			'random' => 'false',
+			'avoidFilter' => 'true'
+		);
+
+                //************ ORIGINAL
+                /*
+                // Default values
 		$data = array(
 			'animation' => 'slide',
 			'slideSpeed' => '1',
@@ -462,6 +501,8 @@ class SlideshowPluginSlideshowSettingsHandler
 			'random' => 'false',
 			'avoidFilter' => 'true'
 		);
+                */
+                //************ FI
 
 		// Read defaults from database and merge with $data, when $fromDatabase is set to true
 		if ($fromDatabase)
