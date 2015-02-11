@@ -31,7 +31,6 @@
 					'descriptionSpeed',
 					'maxWidth',
 					'enableResponsiveness',
-					'controllable',
 					'waitUntilLoaded',
 					'showLoadingIcon',
 					'avoidFilter')))  {

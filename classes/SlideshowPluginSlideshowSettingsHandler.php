@@ -477,7 +477,7 @@ class SlideshowPluginSlideshowSettingsHandler
 			'loop' => 'true',
 			'pauseOnHover' => 'true',
 			'controllable' => 'true',
-			'hideNavigationButtons' => 'false',
+			'hideNavigationButtons' => 'true',
 			'showPagination' => 'true',
 			'hidePagination' => 'true',
 			'controlPanel' => 'true',
