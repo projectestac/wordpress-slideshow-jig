@@ -49,6 +49,10 @@ class SlideshowPluginPostType
 					'new_item'           => __('New slideshow', 'slideshow-jquery-image-gallery'),
 					'view_item'          => __('View slideshow', 'slideshow-jquery-image-gallery'),
 					'search_items'       => __('Search slideshows', 'slideshow-jquery-image-gallery'),
+					//XTEC *********** AFEGIT - new literal for all items.
+					//2015.04.24 @vsaavedr
+					'all_items'          => __( 'All Slideshows', 'slideshow-plugin' ),
+					//*********** FI
 					'not_found'          => __('No slideshows found', 'slideshow-jquery-image-gallery'),
 					'not_found_in_trash' => __('No slideshows found', 'slideshow-jquery-image-gallery')
 				),
@@ -92,7 +96,7 @@ class SlideshowPluginPostType
 	 * @since 1.0.0
 	 */
 	static function registerMetaBoxes()
-	{	
+	{
             //XTEC ************ ELIMINAT - Hide information metabox - not necessary - less is more
             //2014.11.20 @jmeler
             /*
@@ -235,8 +239,8 @@ class SlideshowPluginPostType
 		// XTEC ************ AFEGIT - get slides from picasa
 		// 2014.10.22 @jmeler
 		echo '<hr><p style="color:green; font-weight:bold">Si voleu mostrar més de 10 diapositives us recomanem carregar-les des d\'un àlbum extern:</p>
-		<strong>Picasa</strong> (adreça <a target="_blank" href="https://sites.google.com/a/xtec.cat/ajudaxtecblocs/insercio-de-continguts/carrusel-d-imatges">RSS</a>):  
-		<input type="text" name="picasa_album" value='.get_post_meta( $post->ID, "picasa_album", true ).'><br>    
+		<strong>Picasa</strong> (adreça <a target="_blank" href="https://sites.google.com/a/xtec.cat/ajudaxtecblocs/insercio-de-continguts/carrusel-d-imatges">RSS</a>):
+		<input type="text" name="picasa_album" value='.get_post_meta( $post->ID, "picasa_album", true ).'><br>
 		<br>
 		<strong>Google+ Fotos</strong> (adreça web):<br>
 		<input type="text" name="googlephotos_album" value='.get_post_meta( $post->ID, "googlephotos_album", true ).'><br>';
