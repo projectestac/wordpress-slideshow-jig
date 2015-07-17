@@ -614,7 +614,7 @@ class SlideshowPluginSlideshowSettingsHandler
 				'intervalSpeed'               => __('Seconds between changing slides', 'slideshow-plugin'),
 				'slidesPerView'               => __('Number of slides to fit into one slide', 'slideshow-plugin'),
 				'maxWidth'                    => __('Maximum width. When maximum width is 0, maximum width is ignored', 'slideshow-plugin'),
-				'aspectRatio'                 => __('Proportional relationship%s between slideshow\'s width and height (width:height)', 'slideshow-plugin'),
+				'aspectRatio'                 => sprintf('<a href="' . str_replace('%', '%%', __('http://en.wikipedia.org/wiki/Aspect_ratio_(image)', 'slideshow-plugin')) . '" title="' . __('More info', 'slideshow-plugin') . '" target="_blank">' . __('Proportional relationship%s between slideshow\'s width and height (width:height)', 'slideshow-plugin'), '</a>'),
 				'height'                      => __('Slideshow\'s height', 'slideshow-plugin'),
 				'imageBehaviour'              => __('Image behaviour', 'slideshow-plugin'),
 				'preserveSlideshowDimensions' => __('Shrink slideshow\'s height when width shrinks', 'slideshow-plugin'),
@@ -799,7 +799,7 @@ class SlideshowPluginSlideshowSettingsHandler
 		$name         = $settingsKey . '[' . $settingsName . ']';
 		$displayValue = (!isset($settings['value']) || (empty($settings['value']) && !is_numeric($settings['value'])) ? $settings['default'] : $settings['value']);
 		$class        = ((isset($settings['dependsOn']) && $hideDependentValues)? 'depends-on-field-value ' . $settings['dependsOn'][0] . ' ' . $settings['dependsOn'][1] . ' ': '') . $settingsKey . '-' . $settingsName;
-                
+
 		switch($settings['type'])
 		{
 			case 'text':
