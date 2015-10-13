@@ -281,53 +281,55 @@ class SlideshowPluginSlideshowSettingsHandler
 			$slides = self::$slides[$slideshowId];
 		}
                 
-                // XTEC ************ AFEGIT - get slides from picasa or google photos
-                // 2014.10.22 @jmeler && @frncesc
+// XTEC ************ AFEGIT - get slides from picasa or google photos
+// 2014.10.22 @jmeler && @frncesc
                 
-                $picasa_album_rss=get_post_meta($slideshowId,"picasa_album",true);
-                $googlephotos_album=get_post_meta($slideshowId,"googlephotos_album",true);
+        $picasa_album_rss = get_post_meta($slideshowId,"picasa_album",true);
+        $googlephotos_album = get_post_meta($slideshowId,"googlephotos_album",true);
+        
+        $albums_json=array();
                 
-                $albums_json=array();
+        if ($picasa_album_rss) {
+        	$extra_params = "&alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))";
+            $albums_json[] = str_replace("alt=rss","",$picasa_album_rss) . $extra_params;
+		}
+        
+        if ($googlephotos_album) {
+        	preg_match_all('/.*plus.google.com.*photos\/(\d*)\/albums\/(\d*)/i',$googlephotos_album, $result);
+            $googlephotos_feed = "http://photos.googleapis.com/data/feed/api/user/" . $result[1][0] . "/albumid/" . $result[2][0];
+            $extra_params = "?alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))";
+            $albums_json[] = $googlephotos_feed . $extra_params;
+		} 
                 
-                if ($picasa_album_rss) {
-                    $extra_params = "&alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))";
-                    $albums_json[] = str_replace("alt=rss","",$picasa_album_rss) . $extra_params;
-                }
-                
-                if ($googlephotos_album) {
-                    preg_match_all('/.*plus.google.com.*photos\/(\d*)\/albums\/(\d*)/i',$googlephotos_album, $result);
-                    $googlephotos_feed="http://photos.googleapis.com/data/feed/api/user/" . $result[1][0] . "/albumid/" . $result[2][0];
-                    $extra_params = "?alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))";
-                    $albums_json[] = $googlephotos_feed . $extra_params;
-                } 
-                
-                foreach ($albums_json as $album_json) { 
-                    $request = new WP_Http;
-                    $result = $request->request($album_json);
+        foreach ($albums_json as $album_json) { 
+        	$request = new WP_Http;
+            $result = $request->request($album_json);
                     
-                    if (!is_wp_error($result)) {
-                        $album=json_decode($result['body'],true);
-                        if ($album) {                        
-                            foreach($album['feed']['entry'] as $item){
-                                  $slides[]=array(
-                                            "title"     => $item['media$group']['media$description']['$t'],
-                                            "url"       => $item['content']['src'],
-                                            "urlTarget" => $item['link'][0]['href'],
-                                            "type"      => "image",
-                                            );
-                            }
-                        } else {
-                              echo __("Album not available. Album ID not valid?",'slideshow-plugin');
-                        }
-                        
-                      } else { 
-                            echo __("Timeout error. Album not available. Try to refresh this page",'slideshow-plugin');
-                      }    
-                }
-                    
-                //************ FI
+            if (!is_wp_error($result)) {
+            	$album=json_decode($result['body'],true);
+                if ($album) {
+                	/*echo "<pre>";
+                    print_r($album);
+                    echo "</pre>";*/
+                    foreach($album['feed']['entry'] as $item){
+                    	//echo $item['content']['src'];                        		
+                        $slides[]=array(
+	                        "title"     => $item['media$group']['media$description']['$t'],
+	                        "url"       => $item['content']['src'],
+	                        "urlTarget" => $item['link'][0]['href'],
+	                        "type"      => "image",
+						);
+					}
+                } else {
+                	echo __("Album not available. Album ID not valid?",'slideshow-jquery-image-gallery');
+				}
+			} else { 
+            	echo __("Timeout error. Album not available. Try to refresh this page",'slideshow-jquery-image-gallery');
+            }    
+		}
+//************ FI
 		
-                // Sort slides by order ID
+		// Sort slides by order ID
 		if (is_array($slides))
 		{
 			ksort($slides);
@@ -338,74 +340,7 @@ class SlideshowPluginSlideshowSettingsHandler
 		}
 
 		// Return
-		return $slides;
-	}
-
-	/**
-	 * Returns an array of SlideshowPluginSlideshowView objects if $returnAsObjects is true, otherwise returns an array
-	 * of view arrays that contain slide properties.
-	 *
-	 * To prevent the result from being cached set $enableCache to false. It's set to true by default.
-	 *
-	 * @since 2.2.0
-	 * @param int $slideshowId
-	 * @param bool $returnAsObjects (optional, defaults to true)
-	 * @param bool $enableCache (optional, defaults to true)
-	 * @return mixed $views
-	 */
-	static function getViews($slideshowId, $returnAsObjects = true, $enableCache = true)
-	{
-		// Get slides
-		$slides = self::getSlides($slideshowId, $enableCache);
-
-		// Get settings. Since in version 2.2.X slides aren't put into views yet, this has to be done manually
-		$settings = SlideshowPluginSlideshowSettingsHandler::getSettings($slideshowId, false, $enableCache);
-		$slidesPerView = 1;
-
-		if(isset($settings['slidesPerView']))
-		{
-			$slidesPerView = $settings['slidesPerView'];
-		}
-
-		// Loop through slides, forcing them into views
-		$i      = 0;
-		$viewId = -1;
-		$views  = array();
-
-		if (is_array($slides))
-		{
-			foreach ($slides as $slide)
-			{
-				// Create new view when view is full or not yet created
-				if ($i % $slidesPerView == 0)
-				{
-					$viewId++;
-
-					if ($returnAsObjects)
-					{
-						$views[$viewId] = new SlideshowPluginSlideshowView();
-					}
-					else
-					{
-						$views[$viewId] = array();
-					}
-				}
-
-				// Add slide to view
-				if ($returnAsObjects)
-				{
-					$views[$viewId]->addSlide($slide);
-				}
-				else
-				{
-					$views[$viewId][] = $slide;
-				}
-
-				$i++;
-			}
-		}
-
-		return $views;
+		return array_values($slides);		
 	}
 
 	/**
@@ -464,13 +399,13 @@ class SlideshowPluginSlideshowSettingsHandler
 			$newPostStyleSettings
 		);
                 
-                // XTEC ************ AFEGIT - save external albums addr 
-                // 2014.10.22 @jmeler
-                $picasa_album=isset($_POST["picasa_album"])?$_POST["picasa_album"]:'';
-                $googlephotos_album=isset($_POST["googlephotos_album"])?$_POST["googlephotos_album"]:'';
-                update_post_meta($postId, "picasa_album", $picasa_album);
-                update_post_meta($postId, "googlephotos_album", $googlephotos_album);
-                //************ FI
+		// XTEC ************ AFEGIT - save external albums addr 
+        // 2014.10.22 @jmeler
+        $picasa_album = isset($_POST["picasa_album"])?$_POST["picasa_album"]:'';
+        $googlephotos_album = isset($_POST["googlephotos_album"])?$_POST["googlephotos_album"]:'';
+        update_post_meta($postId, "picasa_album", $picasa_album);
+        update_post_meta($postId, "googlephotos_album", $googlephotos_album);
+        //************ FI
                 
 		// Save settings
 		update_post_meta($postId, self::$settingsKey, $newSettings);
@@ -523,8 +458,8 @@ class SlideshowPluginSlideshowSettingsHandler
 	static function getDefaultSettings($fullDefinition = false, $fromDatabase = true)
 	{
 		// Much used data for translation
-		$yes = __('Yes', 'slideshow-plugin');
-		$no  = __('No', 'slideshow-plugin');
+		$yes = __('Yes', 'slideshow-jquery-image-gallery');
+		$no  = __('No', 'slideshow-jquery-image-gallery');
 
                 // XTEC ************ MODIFICAT - Change default settings 
                 // 2014.11.20 @jmeler
@@ -608,61 +543,61 @@ class SlideshowPluginSlideshowSettingsHandler
                     // XTEC ************ MODIFICAT - Change order for usability 
                     // 2015.04.30 @jmeler
                     	$descriptions = array(
-				'animation'                   => __('Animation used for transition between slides', 'slideshow-plugin'),
-				'slideSpeed'                  => __('Number of seconds the slide takes to slide in', 'slideshow-plugin'),
-				'descriptionSpeed'            => __('Number of seconds the description takes to slide in', 'slideshow-plugin'),
-				'intervalSpeed'               => __('Seconds between changing slides', 'slideshow-plugin'),
-				'slidesPerView'               => __('Number of slides to fit into one slide', 'slideshow-plugin'),
-				'maxWidth'                    => __('Maximum width. When maximum width is 0, maximum width is ignored', 'slideshow-plugin'),
-				'aspectRatio'                 => __('Proportional relationship%s between slideshow\'s width and height (width:height)', 'slideshow-plugin'),
-				'height'                      => __('Slideshow\'s height', 'slideshow-plugin'),
-				'imageBehaviour'              => __('Image behaviour', 'slideshow-plugin'),
-				'preserveSlideshowDimensions' => __('Shrink slideshow\'s height when width shrinks', 'slideshow-plugin'),
-				'enableResponsiveness'        => __('Enable responsiveness (Shrink slideshow\'s width when page\'s width shrinks)', 'slideshow-plugin'),
-				'showDescription'             => __('Show title and description', 'slideshow-plugin'),
-				'hideDescription'             => __('Hide description box, pop up when mouse hovers over', 'slideshow-plugin'),
-				'play'                        => __('Automatically slide to the next slide', 'slideshow-plugin'),
-				'loop'                        => __('Return to the beginning of the slideshow after last slide', 'slideshow-plugin'),
-				'pauseOnHover'                => __('Pause slideshow when mouse hovers over', 'slideshow-plugin'),
-				'controllable'                => __('Activate navigation buttons', 'slideshow-plugin'),
-				'hideNavigationButtons'       => __('Hide navigation buttons, show when mouse hovers over', 'slideshow-plugin'),
-				'showPagination'              => __('Activate pagination', 'slideshow-plugin'),
-				'hidePagination'              => __('Hide pagination, show when mouse hovers over', 'slideshow-plugin'),
-				'controlPanel'                => __('Activate control panel (play and pause button)', 'slideshow-plugin'),
-				'hideControlPanel'            => __('Hide control panel, show when mouse hovers over', 'slideshow-plugin'),
-				'waitUntilLoaded'             => __('Wait until the next slide has loaded before showing it', 'slideshow-plugin'),
-				'showLoadingIcon'             => __('Show a loading icon until the first slide appears', 'slideshow-plugin'),
-				'random'                      => __('Randomize slides', 'slideshow-plugin'),
-				'avoidFilter'                 => sprintf(__('Avoid content filter (disable if \'%s\' is shown)', 'slideshow-plugin'), SlideshowPluginShortcode::$bookmark)
+				'animation'                   => __('Animation used for transition between slides', 'slideshow-jquery-image-gallery'),
+				'slideSpeed'                  => __('Number of seconds the slide takes to slide in', 'slideshow-jquery-image-gallery'),
+				'descriptionSpeed'            => __('Number of seconds the description takes to slide in', 'slideshow-jquery-image-gallery'),
+				'intervalSpeed'               => __('Seconds between changing slides', 'slideshow-jquery-image-gallery'),
+				'slidesPerView'               => __('Number of slides to fit into one slide', 'slideshow-jquery-image-gallery'),
+				'maxWidth'                    => __('Maximum width. When maximum width is 0, maximum width is ignored', 'slideshow-jquery-image-gallery'),
+				'aspectRatio'                 => __('Proportional relationship%s between slideshow\'s width and height (width:height)', 'slideshow-jquery-image-gallery'),
+				'height'                      => __('Slideshow\'s height', 'slideshow-jquery-image-gallery'),
+				'imageBehaviour'              => __('Image behaviour', 'slideshow-jquery-image-gallery'),
+				'preserveSlideshowDimensions' => __('Shrink slideshow\'s height when width shrinks', 'slideshow-jquery-image-gallery'),
+				'enableResponsiveness'        => __('Enable responsiveness (Shrink slideshow\'s width when page\'s width shrinks)', 'slideshow-jquery-image-gallery'),
+				'showDescription'             => __('Show title and description', 'slideshow-jquery-image-gallery'),
+				'hideDescription'             => __('Hide description box, pop up when mouse hovers over', 'slideshow-jquery-image-gallery'),
+				'play'                        => __('Automatically slide to the next slide', 'slideshow-jquery-image-gallery'),
+				'loop'                        => __('Return to the beginning of the slideshow after last slide', 'slideshow-jquery-image-gallery'),
+				'pauseOnHover'                => __('Pause slideshow when mouse hovers over', 'slideshow-jquery-image-gallery'),
+				'controllable'                => __('Activate navigation buttons', 'slideshow-jquery-image-gallery'),
+				'hideNavigationButtons'       => __('Hide navigation buttons, show when mouse hovers over', 'slideshow-jquery-image-gallery'),
+				'showPagination'              => __('Activate pagination', 'slideshow-jquery-image-gallery'),
+				'hidePagination'              => __('Hide pagination, show when mouse hovers over', 'slideshow-jquery-image-gallery'),
+				'controlPanel'                => __('Activate control panel (play and pause button)', 'slideshow-jquery-image-gallery'),
+				'hideControlPanel'            => __('Hide control panel, show when mouse hovers over', 'slideshow-jquery-image-gallery'),
+				'waitUntilLoaded'             => __('Wait until the next slide has loaded before showing it', 'slideshow-jquery-image-gallery'),
+				'showLoadingIcon'             => __('Show a loading icon until the first slide appears', 'slideshow-jquery-image-gallery'),
+				'random'                      => __('Randomize slides', 'slideshow-jquery-image-gallery'),
+				'avoidFilter'                 => sprintf(__('Avoid content filter (disable if \'%s\' is shown)', 'slideshow-jquery-image-gallery'), SlideshowPluginShortcode::$bookmark)
 			);
                         
 			$data = array(
-				'animation'                   => array('type' => 'select', 'default' => $data['animation']                  , 'description' => $descriptions['animation']                  , 'group' => __('Animation', 'slideshow-plugin')    , 'options' => array('slide' => __('Slide Left', 'slideshow-plugin'), 'slideRight' => __('Slide Right', 'slideshow-plugin'), 'slideUp' => __('Slide Up', 'slideshow-plugin'), 'slideDown' => __('Slide Down', 'slideshow-plugin'), 'crossFade' => __('Cross Fade', 'slideshow-plugin'), 'directFade' => __('Direct Fade', 'slideshow-plugin'), 'fade' => __('Fade', 'slideshow-plugin'), 'random' => __('Random Animation', 'slideshow-plugin'))),
-				'slideSpeed'                  => array('type' => 'text'  , 'default' => $data['slideSpeed']                 , 'description' => $descriptions['slideSpeed']                 , 'group' => __('Animation', 'slideshow-plugin')),
-				'descriptionSpeed'            => array('type' => 'text'  , 'default' => $data['descriptionSpeed']           , 'description' => $descriptions['descriptionSpeed']           , 'group' => __('Animation', 'slideshow-plugin')),
-				'intervalSpeed'               => array('type' => 'text'  , 'default' => $data['intervalSpeed']              , 'description' => $descriptions['intervalSpeed']              , 'group' => __('Animation', 'slideshow-plugin')),
-				'slidesPerView'               => array('type' => 'text'  , 'default' => $data['slidesPerView']              , 'description' => $descriptions['slidesPerView']              , 'group' => __('Display', 'slideshow-plugin')),
-				'maxWidth'                    => array('type' => 'text'  , 'default' => $data['maxWidth']                   , 'description' => $descriptions['maxWidth']                   , 'group' => __('Display', 'slideshow-plugin')),
-                                'enableResponsiveness'        => array('type' => 'radio' , 'default' => $data['enableResponsiveness']       , 'description' => $descriptions['enableResponsiveness']       , 'group' => __('Display', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no)),
-                                'preserveSlideshowDimensions' => array('type' => 'radio' , 'default' => $data['preserveSlideshowDimensions'], 'description' => $descriptions['preserveSlideshowDimensions'], 'group' => __('Display', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[enableResponsiveness]', 'true')),
-				'aspectRatio'                 => array('type' => 'text'  , 'default' => $data['aspectRatio']                , 'description' => $descriptions['aspectRatio']                , 'group' => __('Display', 'slideshow-plugin')                                                           , 'dependsOn' => array('settings[preserveSlideshowDimensions]', 'true')),
-				'height'                      => array('type' => 'text'  , 'default' => $data['height']                     , 'description' => $descriptions['height']                     , 'group' => __('Display', 'slideshow-plugin')                                                           , 'dependsOn' => array('settings[preserveSlideshowDimensions]', 'false')),
-				'imageBehaviour'              => array('type' => 'select', 'default' => $data['imageBehaviour']             , 'description' => $descriptions['imageBehaviour']             , 'group' => __('Display', 'slideshow-plugin')      , 'options' => array('natural' => __('Natural and centered', 'slideshow-plugin'), 'crop' => __('Crop to fit', 'slideshow-plugin'), 'stretch' => __('Stretch to fit', 'slideshow-plugin'))),
-                                'showDescription'             => array('type' => 'radio' , 'default' => $data['showDescription']            , 'description' => $descriptions['showDescription']            , 'group' => __('Display', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no)),
-				'hideDescription'             => array('type' => 'radio' , 'default' => $data['hideDescription']            , 'description' => $descriptions['hideDescription']            , 'group' => __('Display', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[showDescription]', 'true')),
-				'play'                        => array('type' => 'radio' , 'default' => $data['play']                       , 'description' => $descriptions['play']                       , 'group' => __('Control', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no)),
-				'loop'                        => array('type' => 'radio' , 'default' => $data['loop']                       , 'description' => $descriptions['loop']                       , 'group' => __('Control', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no)),
-				'pauseOnHover'                => array('type' => 'radio' , 'default' => $data['loop']                       , 'description' => $descriptions['pauseOnHover']               , 'group' => __('Control', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no)),
-				'controllable'                => array('type' => 'radio' , 'default' => $data['controllable']               , 'description' => $descriptions['controllable']               , 'group' => __('Control', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no)),
-				'hideNavigationButtons'       => array('type' => 'radio' , 'default' => $data['hideNavigationButtons']      , 'description' => $descriptions['hideNavigationButtons']      , 'group' => __('Control', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[controllable]', 'true')),
-				'showPagination'              => array('type' => 'radio' , 'default' => $data['showPagination']             , 'description' => $descriptions['showPagination']             , 'group' => __('Control', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no)),
-				'hidePagination'              => array('type' => 'radio' , 'default' => $data['hidePagination']             , 'description' => $descriptions['hidePagination']             , 'group' => __('Control', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[showPagination]', 'true')),
-				'controlPanel'                => array('type' => 'radio' , 'default' => $data['controlPanel']               , 'description' => $descriptions['controlPanel']               , 'group' => __('Control', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no)),
-				'hideControlPanel'            => array('type' => 'radio' , 'default' => $data['hideControlPanel']           , 'description' => $descriptions['hideControlPanel']           , 'group' => __('Control', 'slideshow-plugin')      , 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[controlPanel]', 'true')),
-				'waitUntilLoaded'             => array('type' => 'radio' , 'default' => $data['waitUntilLoaded']            , 'description' => $descriptions['waitUntilLoaded']            , 'group' => __('Miscellaneous', 'slideshow-plugin'), 'options' => array('true' => $yes, 'false' => $no)),
-				'showLoadingIcon'             => array('type' => 'radio' , 'default' => $data['showLoadingIcon']            , 'description' => $descriptions['showLoadingIcon']            , 'group' => __('Miscellaneous', 'slideshow-plugin'), 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[waitUntilLoaded]', 'true')),
-				'random'                      => array('type' => 'radio' , 'default' => $data['random']                     , 'description' => $descriptions['random']                     , 'group' => __('Miscellaneous', 'slideshow-plugin'), 'options' => array('true' => $yes, 'false' => $no)),
-				'avoidFilter'                 => array('type' => 'radio' , 'default' => $data['avoidFilter']                , 'description' => $descriptions['avoidFilter']                , 'group' => __('Miscellaneous', 'slideshow-plugin'), 'options' => array('true' => $yes, 'false' => $no))
+				'animation'                   => array('type' => 'select', 'default' => $data['animation']                  , 'description' => $descriptions['animation']                  , 'group' => __('Animation', 'slideshow-jquery-image-gallery')    , 'options' => array('slide' => __('Slide Left', 'slideshow-jquery-image-gallery'), 'slideRight' => __('Slide Right', 'slideshow-jquery-image-gallery'), 'slideUp' => __('Slide Up', 'slideshow-jquery-image-gallery'), 'slideDown' => __('Slide Down', 'slideshow-jquery-image-gallery'), 'crossFade' => __('Cross Fade', 'slideshow-jquery-image-gallery'), 'directFade' => __('Direct Fade', 'slideshow-jquery-image-gallery'), 'fade' => __('Fade', 'slideshow-jquery-image-gallery'), 'random' => __('Random Animation', 'slideshow-jquery-image-gallery'))),
+				'slideSpeed'                  => array('type' => 'text'  , 'default' => $data['slideSpeed']                 , 'description' => $descriptions['slideSpeed']                 , 'group' => __('Animation', 'slideshow-jquery-image-gallery')),
+				'descriptionSpeed'            => array('type' => 'text'  , 'default' => $data['descriptionSpeed']           , 'description' => $descriptions['descriptionSpeed']           , 'group' => __('Animation', 'slideshow-jquery-image-gallery')),
+				'intervalSpeed'               => array('type' => 'text'  , 'default' => $data['intervalSpeed']              , 'description' => $descriptions['intervalSpeed']              , 'group' => __('Animation', 'slideshow-jquery-image-gallery')),
+				'slidesPerView'               => array('type' => 'text'  , 'default' => $data['slidesPerView']              , 'description' => $descriptions['slidesPerView']              , 'group' => __('Display', 'slideshow-jquery-image-gallery')),
+				'maxWidth'                    => array('type' => 'text'  , 'default' => $data['maxWidth']                   , 'description' => $descriptions['maxWidth']                   , 'group' => __('Display', 'slideshow-jquery-image-gallery')),
+                                'enableResponsiveness'        => array('type' => 'radio' , 'default' => $data['enableResponsiveness']       , 'description' => $descriptions['enableResponsiveness']       , 'group' => __('Display', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no)),
+                                'preserveSlideshowDimensions' => array('type' => 'radio' , 'default' => $data['preserveSlideshowDimensions'], 'description' => $descriptions['preserveSlideshowDimensions'], 'group' => __('Display', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[enableResponsiveness]', 'true')),
+				'aspectRatio'                 => array('type' => 'text'  , 'default' => $data['aspectRatio']                , 'description' => $descriptions['aspectRatio']                , 'group' => __('Display', 'slideshow-jquery-image-gallery')                                                           , 'dependsOn' => array('settings[preserveSlideshowDimensions]', 'true')),
+				'height'                      => array('type' => 'text'  , 'default' => $data['height']                     , 'description' => $descriptions['height']                     , 'group' => __('Display', 'slideshow-jquery-image-gallery')                                                           , 'dependsOn' => array('settings[preserveSlideshowDimensions]', 'false')),
+				'imageBehaviour'              => array('type' => 'select', 'default' => $data['imageBehaviour']             , 'description' => $descriptions['imageBehaviour']             , 'group' => __('Display', 'slideshow-jquery-image-gallery')      , 'options' => array('natural' => __('Natural and centered', 'slideshow-jquery-image-gallery'), 'crop' => __('Crop to fit', 'slideshow-jquery-image-gallery'), 'stretch' => __('Stretch to fit', 'slideshow-jquery-image-gallery'))),
+                                'showDescription'             => array('type' => 'radio' , 'default' => $data['showDescription']            , 'description' => $descriptions['showDescription']            , 'group' => __('Display', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no)),
+				'hideDescription'             => array('type' => 'radio' , 'default' => $data['hideDescription']            , 'description' => $descriptions['hideDescription']            , 'group' => __('Display', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[showDescription]', 'true')),
+				'play'                        => array('type' => 'radio' , 'default' => $data['play']                       , 'description' => $descriptions['play']                       , 'group' => __('Control', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no)),
+				'loop'                        => array('type' => 'radio' , 'default' => $data['loop']                       , 'description' => $descriptions['loop']                       , 'group' => __('Control', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no)),
+				'pauseOnHover'                => array('type' => 'radio' , 'default' => $data['loop']                       , 'description' => $descriptions['pauseOnHover']               , 'group' => __('Control', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no)),
+				'controllable'                => array('type' => 'radio' , 'default' => $data['controllable']               , 'description' => $descriptions['controllable']               , 'group' => __('Control', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no)),
+				'hideNavigationButtons'       => array('type' => 'radio' , 'default' => $data['hideNavigationButtons']      , 'description' => $descriptions['hideNavigationButtons']      , 'group' => __('Control', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[controllable]', 'true')),
+				'showPagination'              => array('type' => 'radio' , 'default' => $data['showPagination']             , 'description' => $descriptions['showPagination']             , 'group' => __('Control', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no)),
+				'hidePagination'              => array('type' => 'radio' , 'default' => $data['hidePagination']             , 'description' => $descriptions['hidePagination']             , 'group' => __('Control', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[showPagination]', 'true')),
+				'controlPanel'                => array('type' => 'radio' , 'default' => $data['controlPanel']               , 'description' => $descriptions['controlPanel']               , 'group' => __('Control', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no)),
+				'hideControlPanel'            => array('type' => 'radio' , 'default' => $data['hideControlPanel']           , 'description' => $descriptions['hideControlPanel']           , 'group' => __('Control', 'slideshow-jquery-image-gallery')      , 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[controlPanel]', 'true')),
+				'waitUntilLoaded'             => array('type' => 'radio' , 'default' => $data['waitUntilLoaded']            , 'description' => $descriptions['waitUntilLoaded']            , 'group' => __('Miscellaneous', 'slideshow-jquery-image-gallery'), 'options' => array('true' => $yes, 'false' => $no)),
+				'showLoadingIcon'             => array('type' => 'radio' , 'default' => $data['showLoadingIcon']            , 'description' => $descriptions['showLoadingIcon']            , 'group' => __('Miscellaneous', 'slideshow-jquery-image-gallery'), 'options' => array('true' => $yes, 'false' => $no) , 'dependsOn' => array('settings[waitUntilLoaded]', 'true')),
+				'random'                      => array('type' => 'radio' , 'default' => $data['random']                     , 'description' => $descriptions['random']                     , 'group' => __('Miscellaneous', 'slideshow-jquery-image-gallery'), 'options' => array('true' => $yes, 'false' => $no)),
+				'avoidFilter'                 => array('type' => 'radio' , 'default' => $data['avoidFilter']                , 'description' => $descriptions['avoidFilter']                , 'group' => __('Miscellaneous', 'slideshow-jquery-image-gallery'), 'options' => array('true' => $yes, 'false' => $no))
 			);
                         
                         //************ ORIGINAL
@@ -764,7 +699,7 @@ class SlideshowPluginSlideshowSettingsHandler
 		if ($fullDefinition)
 		{
 			$data = array(
-				'style' => array('type' => 'select', 'default' => $data['style'], 'description' => __('The style used for this slideshow', 'slideshow-plugin'), 'options' => SlideshowPluginGeneralSettings::getStylesheets()),
+				'style' => array('type' => 'select', 'default' => $data['style'], 'description' => __('The style used for this slideshow', 'slideshow-jquery-image-gallery'), 'options' => SlideshowPluginGeneralSettings::getStylesheets()),
 			);
 		}
 
@@ -799,7 +734,7 @@ class SlideshowPluginSlideshowSettingsHandler
 		$name         = $settingsKey . '[' . $settingsName . ']';
 		$displayValue = (!isset($settings['value']) || (empty($settings['value']) && !is_numeric($settings['value'])) ? $settings['default'] : $settings['value']);
 		$class        = ((isset($settings['dependsOn']) && $hideDependentValues)? 'depends-on-field-value ' . $settings['dependsOn'][0] . ' ' . $settings['dependsOn'][1] . ' ': '') . $settingsKey . '-' . $settingsName;
-                
+
 		switch($settings['type'])
 		{
 			case 'text':
