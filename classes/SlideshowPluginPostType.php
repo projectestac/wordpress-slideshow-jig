@@ -42,15 +42,15 @@ class SlideshowPluginPostType
 			self::$postType,
 			array(
 				'labels'               => array(
-					'name'               => __('Slideshows', 'slideshow-plugin'),
-					'singular_name'      => __('Slideshow', 'slideshow-plugin'),
-					'add_new_item'       => __('Add New Slideshow', 'slideshow-plugin'),
-					'edit_item'          => __('Edit slideshow', 'slideshow-plugin'),
-					'new_item'           => __('New slideshow', 'slideshow-plugin'),
-					'view_item'          => __('View slideshow', 'slideshow-plugin'),
-					'search_items'       => __('Search slideshows', 'slideshow-plugin'),
-					'not_found'          => __('No slideshows found', 'slideshow-plugin'),
-					'not_found_in_trash' => __('No slideshows found', 'slideshow-plugin')
+					'name'               => __('Slideshows', 'slideshow-jquery-image-gallery'),
+					'singular_name'      => __('Slideshow', 'slideshow-jquery-image-gallery'),
+					'add_new_item'       => __('Add New Slideshow', 'slideshow-jquery-image-gallery'),
+					'edit_item'          => __('Edit slideshow', 'slideshow-jquery-image-gallery'),
+					'new_item'           => __('New slideshow', 'slideshow-jquery-image-gallery'),
+					'view_item'          => __('View slideshow', 'slideshow-jquery-image-gallery'),
+					'search_items'       => __('Search slideshows', 'slideshow-jquery-image-gallery'),
+					'not_found'          => __('No slideshows found', 'slideshow-jquery-image-gallery'),
+					'not_found_in_trash' => __('No slideshows found', 'slideshow-jquery-image-gallery')
 				),
 				'public'               => false,
 				'publicly_queryable'   => false,
@@ -95,7 +95,7 @@ class SlideshowPluginPostType
 	{
 		add_meta_box(
 			'information',
-			__('Information', 'slideshow-plugin'),
+			__('Information', 'slideshow-jquery-image-gallery'),
 			array(__CLASS__, 'informationMetaBox'),
 			self::$postType,
 			'normal',
@@ -104,7 +104,7 @@ class SlideshowPluginPostType
 
 		add_meta_box(
 			'slides-list',
-			__('Slides List', 'slideshow-plugin'),
+			__('Slides List', 'slideshow-jquery-image-gallery'),
 			array(__CLASS__, 'slidesMetaBox'),
 			self::$postType,
 			'side',
@@ -113,7 +113,7 @@ class SlideshowPluginPostType
 
 		add_meta_box(
 			'style',
-			__('Slideshow Style', 'slideshow-plugin'),
+			__('Slideshow Style', 'slideshow-jquery-image-gallery'),
 			array(__CLASS__, 'styleMetaBox'),
 			self::$postType,
 			'normal',
@@ -122,7 +122,7 @@ class SlideshowPluginPostType
 
 		add_meta_box(
 			'settings',
-			__('Slideshow Settings', 'slideshow-plugin'),
+			__('Slideshow Settings', 'slideshow-jquery-image-gallery'),
 			array(__CLASS__, 'settingsMetaBox'),
 			self::$postType,
 			'normal',
@@ -170,11 +170,11 @@ class SlideshowPluginPostType
 		switch ($messageID)
 		{
 			case 6:
-				$messages[$currentScreen->base][$messageID] = __('Slideshow created', 'slideshow-plugin');
+				$messages[$currentScreen->base][$messageID] = __('Slideshow created', 'slideshow-jquery-image-gallery');
 				break;
 
 			default:
-				$messages[$currentScreen->base][$messageID] = __('Slideshow updated', 'slideshow-plugin');
+				$messages[$currentScreen->base][$messageID] = __('Slideshow updated', 'slideshow-jquery-image-gallery');
 		}
 
 		return $messages;
@@ -187,7 +187,7 @@ class SlideshowPluginPostType
 	 */
 	static function supportPluginMessage()
 	{
-		include SlideshowPluginMain::getPluginPath() . '/views/' . __CLASS__ . '/support-plugin.php';
+		SlideshowPluginMain::outputView(__CLASS__ . DIRECTORY_SEPARATOR . 'support-plugin.php');
 	}
 
 	/**
@@ -199,16 +199,15 @@ class SlideshowPluginPostType
 	{
 		global $post;
 
-		$snippet   = htmlentities(sprintf('<?php do_action(\'slideshow_deploy\', \'%s\'); ?>', $post->ID));
-		$shortCode = htmlentities(sprintf('[' . SlideshowPluginShortcode::$shortCode . ' id=\'%s\']', $post->ID));
+		$data            = new stdClass();
+		$data->snippet   = htmlentities(sprintf('<?php do_action(\'slideshow_deploy\', \'%s\'); ?>', $post->ID));
+		$data->shortCode = htmlentities(sprintf('[' . SlideshowPluginShortcode::$shortCode . ' id=\'%s\']', $post->ID));
 
-		include SlideshowPluginMain::getPluginPath() . '/views/' . __CLASS__ . '/information.php';
+		SlideshowPluginMain::outputView(__CLASS__ . DIRECTORY_SEPARATOR . 'information.php', $data);
 	}
 
 	/**
 	 * Shows slides currently in slideshow
-	 *
-	 * TODO Tidy up, it's probably best to move all to 'slides.php'
 	 *
 	 * @since 1.0.0
 	 */
@@ -216,52 +215,10 @@ class SlideshowPluginPostType
 	{
 		global $post;
 
-		// Get views
-		$views = SlideshowPluginSlideshowSettingsHandler::getViews($post->ID);
+		$data         = new stdClass();
+		$data->slides = SlideshowPluginSlideshowSettingsHandler::getSlides($post->ID);
 
-		// Insert slide buttons
-		echo '<p style="text-align: center;">
-			<i>' . __('Insert', 'slideshow-plugin') . ':</i><br/>' .
-			SlideshowPluginSlideInserter::getImageSlideInsertButton() .
-			SlideshowPluginSlideInserter::getTextSlideInsertButton() .
-			SlideshowPluginSlideInserter::getVideoSlideInsertButton() .
-		'</p>';
-
-		// Toggle slides open/closed
-		echo '<p style="text-align: center;">
-			<a href="#" class="open-slides-button">' . __( 'Open all', 'slideshow-plugin' ) . '</a>
-			|
-			<a href="#" class="close-slides-button">' . __( 'Close all', 'slideshow-plugin' ) . '</a>
-		</p>';
-
-		// No views/slides message
-		if (count($views) <= 0)
-		{
-			echo '<p>' . __('Add slides to this slideshow by using one of the buttons above.', 'slideshow-plugin') . '</p>';
-		}
-
-		// Start list
-		echo '<div class="sortable-slides-list">';
-
-		// Print views
-		if (is_array($views))
-		{
-			foreach($views as $view)
-			{
-				if (!($view instanceof SlideshowPluginSlideshowView))
-				{
-					continue;
-				}
-
-				echo $view->toBackEndHTML();
-			}
-		}
-
-		// End list
-		echo '</div>';
-
-		// Templates
-		SlideshowPluginSlideshowSlide::getBackEndTemplates(false);
+		SlideshowPluginMain::outputView(__CLASS__ . DIRECTORY_SEPARATOR . 'slides.php', $data);
 	}
 
 	/**
@@ -273,11 +230,10 @@ class SlideshowPluginPostType
 	{
 		global $post;
 
-		// Get settings
-		$settings = SlideshowPluginSlideshowSettingsHandler::getStyleSettings($post->ID, true);
+		$data           = new stdClass();
+		$data->settings = SlideshowPluginSlideshowSettingsHandler::getStyleSettings($post->ID, true);
 
-		// Include style settings file
-		include SlideshowPluginMain::getPluginPath() . '/views/' . __CLASS__ . '/style-settings.php';
+		SlideshowPluginMain::outputView(__CLASS__ . DIRECTORY_SEPARATOR . 'style-settings.php', $data);
 	}
 
 	/**
@@ -292,11 +248,10 @@ class SlideshowPluginPostType
 		// Nonce
 		wp_nonce_field(SlideshowPluginSlideshowSettingsHandler::$nonceAction, SlideshowPluginSlideshowSettingsHandler::$nonceName);
 
-		// Get settings
-		$settings = SlideshowPluginSlideshowSettingsHandler::getSettings($post->ID, true);
+		$data           = new stdClass();
+		$data->settings = SlideshowPluginSlideshowSettingsHandler::getSettings($post->ID, true);
 
-		// Include
-		include SlideshowPluginMain::getPluginPath() . '/views/' . __CLASS__ . '/settings.php';
+		SlideshowPluginMain::outputView(__CLASS__ . DIRECTORY_SEPARATOR . 'settings.php', $data);
 	}
 
 	/**
@@ -317,7 +272,7 @@ class SlideshowPluginPostType
 				'post'   => $post->ID,
 			));
 
-			$actions['duplicate'] = '<a href="' . wp_nonce_url($url, 'duplicate-slideshow_' . $post->ID, 'nonce') . '">' . __('Duplicate', 'slideshow-plugin') . '</a>';
+			$actions['duplicate'] = '<a href="' . wp_nonce_url($url, 'duplicate-slideshow_' . $post->ID, 'nonce') . '">' . __('Duplicate', 'slideshow-jquery-image-gallery') . '</a>';
 		}
 
 		return $actions;
@@ -368,7 +323,7 @@ class SlideshowPluginPostType
 			'post_parent'    => $post->post_parent,
 			'post_password'  => $post->post_password,
 			'post_status'    => 'draft',
-			'post_title'     => $post->post_title . (strlen($post->post_title) > 0 ? ' - ' : '') . __('Copy', 'slideshow-plugin'),
+			'post_title'     => $post->post_title . (strlen($post->post_title) > 0 ? ' - ' : '') . __('Copy', 'slideshow-jquery-image-gallery'),
 			'post_type'      => $post->post_type,
 			'to_ping'        => $post->to_ping,
 			'menu_order'     => $post->menu_order,
