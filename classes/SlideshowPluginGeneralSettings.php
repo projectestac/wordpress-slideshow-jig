@@ -14,8 +14,11 @@ class SlideshowPluginGeneralSettings
 	/** @var string $settingsGroup Settings group */
 	static $settingsGroup = 'slideshow-jquery-image-gallery-general-settings';
 
-	/** @var string $stylesheetLocation General settings */
+	/** @var string $stylesheetLocation Stylesheet location setting */
 	static $stylesheetLocation = 'slideshow-jquery-image-gallery-stylesheet-location';
+
+	/** @var string $enableLazyLoading Lazy loading setting */
+	static $enableLazyLoading = 'slideshow-jquery-image-gallery-enable-lazy-loading';
 
 	/** @var array $capabilities User capability settings */
 	static $capabilities = array(
@@ -79,8 +82,8 @@ class SlideshowPluginGeneralSettings
 		// Add sub menu
 		add_submenu_page(
 			'edit.php?post_type=' . SlideshowPluginPostType::$postType,
-			__('General Settings', 'slideshow-plugin'),
-			__('General Settings', 'slideshow-plugin'),
+			__('General Settings', 'slideshow-jquery-image-gallery'),
+			__('General Settings', 'slideshow-jquery-image-gallery'),
 			'manage_options',
 			'general_settings',
 			array(__CLASS__, 'generalSettings')
@@ -94,8 +97,7 @@ class SlideshowPluginGeneralSettings
 	 */
 	static function generalSettings()
 	{
-		// Include general settings page
-		include SlideshowPluginMain::getPluginPath() . DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR . __CLASS__ . DIRECTORY_SEPARATOR . 'general-settings.php';
+		SlideshowPluginMain::outputView(__CLASS__ . DIRECTORY_SEPARATOR . 'general-settings.php');
 	}
 
 	/**
@@ -116,6 +118,7 @@ class SlideshowPluginGeneralSettings
 
 		// Register general settings
 		register_setting(self::$settingsGroup, self::$stylesheetLocation);
+		register_setting(self::$settingsGroup, self::$enableLazyLoading);
 
 		// Register user capability settings, saving capabilities only has to be called once.
 		register_setting(self::$settingsGroup, self::$capabilities['addSlideshows']);
@@ -147,8 +150,8 @@ class SlideshowPluginGeneralSettings
 			array(
 				'data'         => array('customStylesKey' => self::$customStyles),
 				'localization' => array(
-					'newCustomizationPrefix' => __('New', 'slideshow-plugin'),
-					'confirmDeleteMessage'   => __('Are you sure you want to delete this custom style?', 'slideshow-plugin')
+					'newCustomizationPrefix' => __('New', 'slideshow-jquery-image-gallery'),
+					'confirmDeleteMessage'   => __('Are you sure you want to delete this custom style?', 'slideshow-jquery-image-gallery')
 				)
 			)
 		);
@@ -163,6 +166,17 @@ class SlideshowPluginGeneralSettings
 	public static function getStylesheetLocation()
 	{
 		return get_option(SlideshowPluginGeneralSettings::$stylesheetLocation, 'footer');
+	}
+
+	/**
+	 * Returns the lazy loading setting, which is disabled (false) by default.
+	 *
+	 * @since 2.3.0
+	 * @return boolean $enableLazyLoading
+	 */
+	public static function getEnableLazyLoading()
+	{
+		return get_option(self::$enableLazyLoading, false) === "true";
 	}
 
 	/**
@@ -193,8 +207,8 @@ class SlideshowPluginGeneralSettings
 	{
 		// Default styles
 		$defaultStyles = array(
-			'style-light.css' => __('Light', 'slideshow-plugin'),
-			'style-dark.css'  => __('Dark', 'slideshow-plugin')
+			'style-light.css' => __('Light', 'slideshow-jquery-image-gallery'),
+			'style-dark.css'  => __('Dark', 'slideshow-jquery-image-gallery')
 		);
 
 		// Loop through default stylesheets
@@ -350,7 +364,7 @@ class SlideshowPluginGeneralSettings
 			foreach ($customStyles as $customStyleKey => $customStyleValue)
 			{
 				// Put custom style key and name into the $newCustomStyle array
-				$newCustomStyles[$customStyleKey] = isset($customStyleValue['title']) ? $customStyleValue['title'] : __('Untitled', 'slideshow-plugin');
+				$newCustomStyles[$customStyleKey] = isset($customStyleValue['title']) ? $customStyleValue['title'] : __('Untitled', 'slideshow-jquery-image-gallery');
 
 				// Get style
 				$newStyle = isset($customStyleValue['style']) ? $customStyleValue['style'] : '';
