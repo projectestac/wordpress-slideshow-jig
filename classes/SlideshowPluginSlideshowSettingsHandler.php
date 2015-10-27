@@ -281,49 +281,51 @@ class SlideshowPluginSlideshowSettingsHandler
 			$slides = self::$slides[$slideshowId];
 		}
 
-                // XTEC ************ AFEGIT - get slides from picasa or google photos
-                // 2014.10.22 @jmeler && @frncesc
+		// XTEC ************ AFEGIT - get slides from picasa or google photos
+		// 2014.10.22 @jmeler && @frncesc
 
-                $picasa_album_rss=get_post_meta($slideshowId,"picasa_album",true);
-                $googlephotos_album=get_post_meta($slideshowId,"googlephotos_album",true);
-                
-                $albums_json=array();
-                
-                if ($picasa_album_rss) {
-                    $extra_params = "&alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))";
-                    $albums_json[] = str_replace("alt=rss","",$picasa_album_rss) . $extra_params;
-                }
-                
-                if ($googlephotos_album) {
-                    preg_match_all('/.*plus.google.com.*photos\/(\d*)\/albums\/(\d*)/i',$googlephotos_album, $result);
-                    $googlephotos_feed="http://photos.googleapis.com/data/feed/api/user/" . $result[1][0] . "/albumid/" . $result[2][0];
-                    $extra_params = "?alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))";
-                    $albums_json[] = $googlephotos_feed . $extra_params;
-                } 
-                
-                foreach ($albums_json as $album_json) { 
-                    $request = new WP_Http;
-                    $result = $request->request($album_json);
-                    
-                    if (!is_wp_error($result)) {
-                        $album=json_decode($result['body'],true);
-                        if ($album) {                        
-                            foreach($album['feed']['entry'] as $item){
-                                  $slides[]=array(
-                                            "title"     => $item['media$group']['media$description']['$t'],
-                                            "url"       => $item['content']['src'],
-                                            "urlTarget" => $item['link'][0]['href'],
-                                            "type"      => "image",
-                                            );
-                            }
-                        } else
-                              echo "<p style='color:red'>Error al obtenir un àlbum extern</p>Comprovi l'adreça de l'àlbum. <a target='_blank' href='https://sites.google.com/a/xtec.cat/ajudaxtecblocs/insercio-de-continguts/carrusel-d-imatges'>Ajuda</a>.";
-                    } else 
-                          echo "<p style='color:red'>Error al obtenir un àlbum extern (posible error de conexió) </p>" . $result->get_error_message() . " <a target='_blank' href='https://sites.google.com/a/xtec.cat/ajudaxtecblocs/insercio-de-continguts/carrusel-d-imatges'>Ajuda</a>";
-                }
-                //************ FI
+		$picasa_album_rss = get_post_meta($slideshowId,"picasa_album",true);
+		$googlephotos_album = get_post_meta($slideshowId,"googlephotos_album",true);
 
-                // Sort slides by order ID
+		$albums_json=array();
+
+		if ($picasa_album_rss) {
+			$extra_params = "&alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))";
+			$albums_json[] = str_replace("alt=rss","",$picasa_album_rss) . $extra_params;
+		}
+
+		if ($googlephotos_album) {
+			preg_match_all('/.*plus.google.com.*photos\/(\d*)\/albums\/(\d*)/i',$googlephotos_album, $result);
+			$googlephotos_feed = "http://photos.googleapis.com/data/feed/api/user/" . $result[1][0] . "/albumid/" . $result[2][0];
+			$extra_params = "?alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))";
+			$albums_json[] = $googlephotos_feed . $extra_params;
+		}
+
+		foreach ($albums_json as $album_json) {
+			$request = new WP_Http;
+			$result = $request->request($album_json);
+
+			if (!is_wp_error($result)) {
+				$album=json_decode($result['body'],true);
+				if ($album) {
+					foreach($album['feed']['entry'] as $item){
+						$slides[]=array(
+							"title"     => $item['media$group']['media$description']['$t'],
+							"url"       => $item['content']['src'],
+							"urlTarget" => $item['link'][0]['href'],
+							"type"      => "image",
+						);
+					}
+				} else {
+					echo __("Album not available. Album ID not valid?",'slideshow-jquery-image-gallery');
+				}
+			} else {
+				echo __("Timeout error. Album not available. Try to refresh this page",'slideshow-jquery-image-gallery');
+			}
+		}
+//************ FI
+
+		// Sort slides by order ID
 		if (is_array($slides))
 		{
 			ksort($slides);
@@ -393,13 +395,13 @@ class SlideshowPluginSlideshowSettingsHandler
 			$newPostStyleSettings
 		);
 
-                // XTEC ************ AFEGIT - save external albums addr 
-                // 2014.10.22 @jmeler
-                $picasa_album=isset($_POST["picasa_album"])?$_POST["picasa_album"]:'';
-                $googlephotos_album=isset($_POST["googlephotos_album"])?$_POST["googlephotos_album"]:'';
-                update_post_meta($postId, "picasa_album", $picasa_album);
-                update_post_meta($postId, "googlephotos_album", $googlephotos_album);
-                //************ FI
+		// XTEC ************ AFEGIT - save external albums addr
+		// 2014.10.22 @jmeler
+		$picasa_album = isset($_POST["picasa_album"])?$_POST["picasa_album"]:'';
+		$googlephotos_album = isset($_POST["googlephotos_album"])?$_POST["googlephotos_album"]:'';
+		update_post_meta($postId, "picasa_album", $picasa_album);
+		update_post_meta($postId, "googlephotos_album", $googlephotos_album);
+		//************ FI
 
 		// Save settings
 		update_post_meta($postId, self::$settingsKey, $newSettings);
@@ -455,8 +457,8 @@ class SlideshowPluginSlideshowSettingsHandler
 		$yes = __('Yes', 'slideshow-jquery-image-gallery');
 		$no  = __('No', 'slideshow-jquery-image-gallery');
 
-                // XTEC ************ MODIFICAT - Change default settings
-                // 2014.11.20 @jmeler
+		// XTEC ************ MODIFICAT - Change default settings
+		// 2014.11.20 @jmeler
 
 		// Default values
 		$data = array(
@@ -488,9 +490,9 @@ class SlideshowPluginSlideshowSettingsHandler
 			'avoidFilter' => 'true'
 		);
 
-                //************ ORIGINAL
-                /*
-                // Default values
+		//************ ORIGINAL
+		/*
+		// Default values
 		$data = array(
 			'animation' => 'slide',
 			'slideSpeed' => '1',
@@ -519,8 +521,8 @@ class SlideshowPluginSlideshowSettingsHandler
 			'random' => 'false',
 			'avoidFilter' => 'true'
 		);
-                */
-                //************ FI
+		*/
+		//************ FI
 
 		// Read defaults from database and merge with $data, when $fromDatabase is set to true
 		if ($fromDatabase)
