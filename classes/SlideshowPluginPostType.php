@@ -51,7 +51,7 @@ class SlideshowPluginPostType
 					'search_items'       => __('Search slideshows', 'slideshow-jquery-image-gallery'),
 					//XTEC *********** AFEGIT - new literal for all items.
 					//2015.04.24 @vsaavedr
-					'all_items'          => __( 'All Slideshows', 'slideshow-plugin' ),
+					'all_items'          => __( 'All Slideshows', 'slideshow-jquery-image-gallery' ),
 					//*********** FI
 					'not_found'          => __('No slideshows found', 'slideshow-jquery-image-gallery'),
 					'not_found_in_trash' => __('No slideshows found', 'slideshow-jquery-image-gallery')
