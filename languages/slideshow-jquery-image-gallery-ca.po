@@ -235,11 +235,6 @@ msgstr "Visualitza el carrusel"
 msgid "Search slideshows"
 msgstr "Cerca carrusels"
 
-# MODIFICAT XTEC
-#: classes/SlideshowPluginPostType.php:54
-msgid "All Slideshows"
-msgstr "Tots els carrusels"
-
 #: classes/SlideshowPluginPostType.php:52
 #: classes/SlideshowPluginPostType.php:53
 msgid "No slideshows found"
@@ -927,3 +922,6 @@ msgid "Timeout error. Album not available. Try to refresh this page"
 msgstr ""
 "No s'ha pogut carregar l'àlbum. S'ha esgotat el temps d'espera. Proveu a "
 "carregar la pàgina de nou."
+
+msgid "All Slideshows"
+msgstr "Tots els carrusels"
