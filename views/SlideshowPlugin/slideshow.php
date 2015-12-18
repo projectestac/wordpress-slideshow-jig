@@ -9,24 +9,7 @@
 		<div class="slideshow_content" style="display: none;">
 
 			<?php
-		// XTEC ************ MODIFICAT - Load slides to show correctly images for Picassa and G+
-		// 2015.10.15 @nacho
 
-			if (is_array($data->slides) && count($data->slides) > 0) {
-				for ($i = 0; $i < count($data->slides); $i++) {
-					echo '<div class="slideshow_view">';
-					
-					$slideData = new stdClass();
-					$slideData->properties = $data->slides[$i];
-			
-					SlideshowPluginMain::outputView('SlideshowPluginSlideshowSlide' . DIRECTORY_SEPARATOR . 'frontend_' . $data->slides[$i]['type'] . '.php', $slideData);
-					
-					echo '</div>';
-				}
-			}
-
-			//************ ORIGINAL
-			/*
 			if (is_array($data->slides) && count($data->slides) > 0)
 			{
 				$i = 0;
@@ -51,8 +34,7 @@
 					echo '<div style="clear: both;"></div></div>';
 				}
 			}
-			*/
-			//************ FI
+
 			?>
 
 		</div>
