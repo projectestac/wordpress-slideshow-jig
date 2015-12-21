@@ -282,18 +282,29 @@ class SlideshowPluginSlideshowSettingsHandler
 		}
 
 		// XTEC ************ AFEGIT - get slides from picasa or google photos
-		// 2014.10.22 @jmeler && @frncesc
+		// 2014.10.22 @jmeler && @frncesc - 2015.12.21 @nacho && @aginard
 
-		$picasa_album_rss = get_post_meta($slideshowId,"picasa_album",true);
+		$picasa_album = get_post_meta($slideshowId,"picasa_album",true);
 		$googlephotos_album = get_post_meta($slideshowId,"googlephotos_album",true);
 
 		$albums_json=array();
 
-		if ($picasa_album_rss) {
-			$extra_params = "&alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))";
-			$albums_json[] = str_replace("alt=rss","",$picasa_album_rss) . $extra_params;
-		}
+		if ($picasa_album){
+			$pos = strpos($picasa_album, 'data/feed/base');
+			if ($pos !== false) {
+				// RSS https://picasaweb.google.com/data/feed/base/user/USER_ID/albumid/ALBUM_ID?alt=rss&kind=photo&hl=ca
+				$extra_params = "&alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))";
+				$albums_json[] = str_replace("alt=rss", "", $picasa_album) . $extra_params;
+			}else {
+				// URL https://picasaweb.google.com/USER_ID/ALBUM_NAME
+				$extra_params = '?alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))';
 
+				$parsed_url = parse_url($picasa_album);
+				$params = explode('/', $parsed_url['path']);
+
+				$albums_json[] = $parsed_url['scheme'] . '://' . $parsed_url['host'] . '/data/feed/api/user/' . $params[1] . '/album/' . $params[2] . '/' . $extra_params;
+			}
+		}
 		if ($googlephotos_album) {
 			preg_match_all('/.*plus.google.com.*photos\/(\d*)\/albums\/(\d*)/i',$googlephotos_album, $result);
 			$googlephotos_feed = "http://photos.googleapis.com/data/feed/api/user/" . $result[1][0] . "/albumid/" . $result[2][0];
@@ -306,10 +317,10 @@ class SlideshowPluginSlideshowSettingsHandler
 			$result = $request->request($album_json);
 
 			if (!is_wp_error($result)) {
-				$album=json_decode($result['body'],true);
+				$album = json_decode($result['body'],true);
 				if ($album) {
 					foreach($album['feed']['entry'] as $item){
-						$slides[]=array(
+						$slides[] = array(
 							"title"     => $item['media$group']['media$description']['$t'],
 							"url"       => $item['content']['src'],
 							"urlTarget" => $item['link'][0]['href'],
