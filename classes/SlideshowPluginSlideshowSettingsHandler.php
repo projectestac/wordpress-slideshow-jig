@@ -306,7 +306,7 @@ class SlideshowPluginSlideshowSettingsHandler
 			}
 		}
 		if ($googlephotos_album) {
-			preg_match_all('/.*plus.google.com.*photos\/(\d*)\/albums\/(\d*)/i',$googlephotos_album, $result);
+			preg_match_all('/.*plus.google.com.*photos\/(\d*)\/album.*\/(\d*)/i',$googlephotos_album, $result);
 			$googlephotos_feed = "http://photos.googleapis.com/data/feed/api/user/" . $result[1][0] . "/albumid/" . $result[2][0];
 			$extra_params = "?alt=json&imgmax=1024&fields=entry(content,media%3Agroup(media%3Adescription),link[%40rel%3D%27alternate%27](%40href))";
 			$albums_json[] = $googlephotos_feed . $extra_params;
