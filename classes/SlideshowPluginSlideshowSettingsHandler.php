@@ -281,9 +281,52 @@ class SlideshowPluginSlideshowSettingsHandler
 			$slides = self::$slides[$slideshowId];
 		}
 
-		// XTEC ************ AFEGIT - get slides from picasa or google photos
-		// 2014.10.22 @jmeler && @frncesc - 2015.12.21 @nacho && @aginard
+		// XTEC ************ AFEGIT - Get slides from picasa or google photos or parse album extension content
+		// 2014.10.22 @jmeler && @frncesc - 2015.12.21 @nacho && @aginard - 2016.04.22 @sarjona
 
+		// Get photos from album extension list or mosaic
+		$album_extension = get_post_meta($slideshowId, 'album_extension', true);
+		if ($album_extension) {
+			foreach(preg_split("/((\r?\n)|(\r\n?))/", $album_extension) as $entry){
+				$entry = trim($entry);
+				if (!empty($entry)) {
+					if (strpos($entry, 'http') === 0) {
+						// List (Image URL)
+						$slides[] = array(
+							"url"       => $entry,
+							"urlTarget" => $entry,
+							"type"      => "image",
+						);
+					} else if (strpos($entry, '<a href') === 0) {
+						// Mosaic (HTML code)
+						$DOM = new DOMDocument;
+						// set error level
+						$internalErrors = libxml_use_internal_errors(true);
+						// load HTML
+						$DOM->loadHTML($entry);
+						// Restore error level
+						libxml_use_internal_errors($internalErrors);
+
+						$items = $DOM->getElementsByTagName('a');
+						foreach ($items as $item) {
+							$url = $item->getAttributeNode('href')->nodeValue;
+						}
+						$items = $DOM->getElementsByTagName('img');
+						foreach ($items as $item) {
+							$img = $item->getAttributeNode('src')->nodeValue;
+						}
+						$slides[] = array(
+							"url"       => $img,
+							"urlTarget" => $url,
+							"type"      => "image",
+						);
+
+					}
+				}
+			}
+		}
+
+		// Get photos from Picasa or GooglePhotos URL
 		$picasa_album = get_post_meta($slideshowId,"picasa_album",true);
 		$googlephotos_album = get_post_meta($slideshowId,"googlephotos_album",true);
 
@@ -407,7 +450,12 @@ class SlideshowPluginSlideshowSettingsHandler
 		);
 
 		// XTEC ************ AFEGIT - save external albums addr
-		// 2014.10.22 @jmeler
+		// 2014.10.22 @jmeler - 2016.04.22 @sarjona
+		$album_extension = isset($_POST["album_extension"])?$_POST["album_extension"]:'';
+		// Only save textarea information if is valid
+		if (empty($album_extension) || strpos($album_extension, 'http') === 0 || strpos($album_extension, '<a href') === 0) {
+			update_post_meta($postId, "album_extension", $album_extension);
+		}
 		$picasa_album = isset($_POST["picasa_album"])?$_POST["picasa_album"]:'';
 		$googlephotos_album = isset($_POST["googlephotos_album"])?$_POST["googlephotos_album"]:'';
 		update_post_meta($postId, "picasa_album", $picasa_album);
