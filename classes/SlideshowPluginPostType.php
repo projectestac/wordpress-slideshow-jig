@@ -81,7 +81,14 @@ class SlideshowPluginPostType
 					'edit_published_posts'   => SlideshowPluginGeneralSettings::$capabilities['editSlideshows'],
 				),
 				'has_archive'          => true,
+				//XTEC *********** MODIFICAT - Shows the real number of elements per page.
+                //2018.04.17 @nacho
+                'hierarchical'         => true,
+				//************ ORIGINAL
+                /*
 				'hierarchical'         => false,
+                */
+                //************ FI
 				'menu_position'        => null,
 				'menu_icon'            => version_compare($wp_version, '3.8', '<') ? SlideshowPluginMain::getPluginUrl() . '/images/' . __CLASS__ . '/adminIcon.png' : 'dashicons-format-gallery',
 				'supports'             => array('title'),
