@@ -248,7 +248,13 @@ class SlideshowPluginPostType
 		echo '<hr><p style="color:green; font-weight:bold">Si voleu mostrar més de 10 diapositives us recomanem carregar-les des d\'un àlbum extern:</p>
 		<strong>Àlbum</strong> (<a target="_blank" href="https://sites.google.com/a/xtec.cat/ajudaxtecblocs/insercio-de-continguts/creacio-de-galeries-d-imatges-amb-album">extensió</a>):
 		<textarea name="album_extension">'.get_post_meta( $post->ID, "album_extension", true ).'</textarea><br>
-		// XTEC *** Delete - Remove Picassa option - 2018.11.29 @adriagarrido
+		// XTEC ********** ELIMINAT - Remove Picassa option
+		// 2018.11.29 @adriagarrido
+		/*
+		<strong>Picasa</strong> (URL o adreça <a target="_blank" href="https://sites.google.com/a/xtec.cat/ajudaxtecblocs/insercio-de-continguts/carrusel-d-imatges">RSS</a>):
+		<input type="text" name="picasa_album" value='.get_post_meta( $post->ID, "picasa_album", true ).'><br>
+		*/
+		// ********** FI
 		<br>
 		<strong>Google+ Fotos</strong> (adreça web):<br>
 		<input type="text" name="googlephotos_album" value='.get_post_meta( $post->ID, "googlephotos_album", true ).'><br>';
