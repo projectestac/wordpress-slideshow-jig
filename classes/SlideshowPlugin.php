@@ -172,7 +172,16 @@ class SlideshowPlugin
 			);
 
 			// Include the location of the admin-ajax.php file
+
+            // XTEC ************ MODIFICAT - Replaced wp_localize_script by wp_add_inline_script
+            // 2021.06.02 @nacho 
+            wp_add_inline_script(
+			// ************ ORIGINAL
+			/*
 			wp_localize_script(
+			*/
+            // ************ FI
+
 				'slideshow-jquery-image-gallery-script',
 				'slideshow_jquery_image_gallery_script_adminURL',
 				admin_url()
