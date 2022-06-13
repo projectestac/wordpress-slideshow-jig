@@ -41,6 +41,13 @@ class SlideshowPlugin
 			$post = get_post($postId);
 		}
 
+        // XTEC ************ AFEGIT - Don't show the slideshow if it is not published.
+        // 2022.06.13 @aginard
+        if ($post->post_status !== 'publish') {
+            return '';
+        }
+        // ************ FI
+
 		// Get slideshow by slug when it's a non-empty string
 		if ($post === null &&
 			is_string($postId) &&
