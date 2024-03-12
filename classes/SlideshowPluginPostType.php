@@ -38,6 +38,21 @@ class SlideshowPluginPostType
 	{
 		global $wp_version;
 
+        // XTEC ************ AFEGIT - Disable the creation of new slideshows when using Gutenberg editor.
+        // 2024.03.12 @aginard
+        $tadv_admin_settings = get_option('tadv_admin_settings');
+
+        if (isset($tadv_admin_settings['options']) &&
+            is_string($tadv_admin_settings['options']) &&
+            strpos($tadv_admin_settings['options'], 'replace_block_editor') === false) {
+            $allow_add_new = false;
+        } else {
+            $allow_add_new = true;
+        }
+
+        $create_posts = $allow_add_new ? 'publish_posts' : false;
+        // XTEC ************ FI
+
 		register_post_type(
 			self::$postType,
 			array(
@@ -79,6 +94,12 @@ class SlideshowPluginPostType
 					'delete_others_posts'    => SlideshowPluginGeneralSettings::$capabilities['deleteSlideshows'],
 					'edit_private_posts'     => SlideshowPluginGeneralSettings::$capabilities['editSlideshows'],
 					'edit_published_posts'   => SlideshowPluginGeneralSettings::$capabilities['editSlideshows'],
+
+                    // XTEC ************ AFEGIT - Disable the creation of new slideshows when using Gutenberg editor.
+                    // 2024.03.12 @aginard
+                    'create_posts' => $create_posts // Removes support for the "Add New" function.
+                    // XTEC ************ FI
+
 				),
 				'has_archive'          => true,
 				//XTEC *********** MODIFICAT - Shows the real number of elements per page.
